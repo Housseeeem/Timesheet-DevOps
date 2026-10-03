@@ -60,7 +60,11 @@ pipeline {
         stage('Deploy backend-app') {
             steps {
                 sh 'docker rm -f backend-app || true'
-                sh 'docker pull ${REGISTRY}/${IMAGE}:latest'
+                withCredentials([usernamePassword(credentialsId: 'registry-creds', usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
+                    sh 'echo "$REG_PASS" | docker login ${REGISTRY} -u "$REG_USER" --password-stdin'
+                    sh 'docker pull ${REGISTRY}/${IMAGE}:latest'
+                    sh 'docker logout ${REGISTRY}'
+                }
                 sh '''
                     docker run -d --name backend-app --network ${NETWORK} \
                       -p 8082:8082 \
